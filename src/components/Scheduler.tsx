@@ -14,7 +14,6 @@ const Scheduler: React.FC = () => {
   const [unscheduledTasks, setUnscheduledTasks] = useState<Task[]>([]);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
   
-  // Initialize time blocks once on component mount
   useEffect(() => {
     const initializeTimeBlocks = () => {
       const newBlocks = generateTimeBlocks(4); // Generate blocks for next 4 hours
@@ -25,14 +24,12 @@ const Scheduler: React.FC = () => {
     initializeTimeBlocks();
   }, []); // Empty dependency array so this only runs once on mount
   
-  // Set up the interval for updating time blocks
   useEffect(() => {
     const intervalId = setInterval(() => {
       setTimeBlocks(prevTimeBlocks => {
         if (shouldRemoveFirstHour(lastUpdateTime, prevTimeBlocks)) {
           const updatedBlocks = removeFirstHour(prevTimeBlocks);
           
-          // Handle tasks in the removed hour
           const removedBlockIds = prevTimeBlocks
             .filter(block => block.hourIndex === 0)
             .map(block => block.id);
@@ -59,7 +56,6 @@ const Scheduler: React.FC = () => {
           setLastUpdateTime(new Date());
           return updatedBlocks;
         } else {
-          // Just update current time indicator without causing a loop
           return prevTimeBlocks.map(block => ({
             ...block,
             isCurrentTime: checkIsCurrentTime(block)
@@ -69,7 +65,7 @@ const Scheduler: React.FC = () => {
     }, 60000); // Check every minute
     
     return () => clearInterval(intervalId);
-  }, [scheduledTasks, unscheduledTasks, lastUpdateTime]); // Remove timeBlocks from dependencies
+  }, [scheduledTasks, unscheduledTasks, lastUpdateTime]);
   
   const checkIsCurrentTime = (block: TimeBlock): boolean => {
     const now = new Date();
@@ -80,15 +76,13 @@ const Scheduler: React.FC = () => {
     return block.time === `${currentHour}:${currentMinuteStr}`;
   };
   
-  const handleDropTaskToTimeBlock = (taskId: string, timeBlockId: string) => {
-    // Check if this is a new task created directly in the time block
+  const handleDropTaskToTimeBlock = (taskId: string, timeBlockId: string, taskTitle?: string) => {
     const existingTask = [...scheduledTasks, ...unscheduledTasks].find(task => task.id === taskId);
     
     if (!existingTask) {
-      // This is a new task being created directly in the schedule
       const newTask: Task = {
         id: taskId,
-        title: "New Task", // This will be replaced with the actual title from TimeBlock component
+        title: taskTitle || "New Task",
         timeBlockId: timeBlockId,
       };
       setScheduledTasks(prev => [...prev, newTask]);

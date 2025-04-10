@@ -9,7 +9,7 @@ import { nanoid } from 'nanoid';
 interface TimeBlockProps {
   timeBlock: TimeBlock;
   tasks: Task[];
-  onDropTask: (taskId: string, timeBlockId: string) => void;
+  onDropTask: (taskId: string, timeBlockId: string, taskTitle?: string) => void;
   onTaskReorder: (taskId: string, timeBlockId: string) => void;
 }
 
@@ -53,7 +53,7 @@ const TimeBlockComponent: React.FC<TimeBlockProps> = ({
         title: newTaskTitle.trim(),
         timeBlockId: timeBlock.id,
       };
-      onDropTask(newTask.id, timeBlock.id);
+      onDropTask(newTask.id, timeBlock.id, newTaskTitle.trim());
       setNewTaskTitle("");
       setIsEditing(false);
     } else if (e.key === 'Escape') {

@@ -6,7 +6,7 @@ import TimeBlockComponent from "./TimeBlock";
 interface TimeGridProps {
   timeBlocks: TimeBlock[];
   tasks: Task[];
-  onDropTask: (taskId: string, timeBlockId: string) => void;
+  onDropTask: (taskId: string, timeBlockId: string, taskTitle?: string) => void;
   onTaskReorder: (taskId: string, timeBlockId: string) => void;
 }
 
