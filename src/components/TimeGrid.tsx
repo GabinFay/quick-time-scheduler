@@ -8,6 +8,7 @@ interface TimeGridProps {
   tasks: Task[];
   onDropTask: (taskId: string, timeBlockId: string, taskTitle?: string) => void;
   onTaskReorder: (taskId: string, timeBlockId: string) => void;
+  onInsertBlock?: (hourIndex: number, minuteIndex: number) => void;
 }
 
 const TimeGrid: React.FC<TimeGridProps> = ({
@@ -15,6 +16,7 @@ const TimeGrid: React.FC<TimeGridProps> = ({
   tasks,
   onDropTask,
   onTaskReorder,
+  onInsertBlock,
 }) => {
   // Group timeBlocks by hour
   const timeBlocksByHour: TimeBlock[][] = [];
@@ -46,6 +48,7 @@ const TimeGrid: React.FC<TimeGridProps> = ({
                   tasks={blockTasks}
                   onDropTask={onDropTask}
                   onTaskReorder={onTaskReorder}
+                  onInsertBlock={onInsertBlock}
                 />
               );
             })}

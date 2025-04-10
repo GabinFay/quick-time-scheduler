@@ -5,12 +5,14 @@ import TaskItem from "./TaskItem";
 import { useDrop } from "react-dnd";
 import { Input } from "./ui/input";
 import { nanoid } from 'nanoid';
+import { Plus } from "lucide-react";
 
 interface TimeBlockProps {
   timeBlock: TimeBlock;
   tasks: Task[];
   onDropTask: (taskId: string, timeBlockId: string, taskTitle?: string) => void;
   onTaskReorder: (taskId: string, timeBlockId: string) => void;
+  onInsertBlock?: (hourIndex: number, minuteIndex: number) => void;
 }
 
 const TimeBlockComponent: React.FC<TimeBlockProps> = ({
@@ -18,9 +20,11 @@ const TimeBlockComponent: React.FC<TimeBlockProps> = ({
   tasks,
   onDropTask,
   onTaskReorder,
+  onInsertBlock,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [showInsertButton, setShowInsertButton] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [{ isOver }, drop] = useDrop({
@@ -67,15 +71,23 @@ const TimeBlockComponent: React.FC<TimeBlockProps> = ({
     setNewTaskTitle("");
   };
 
+  const handleInsert = () => {
+    if (onInsertBlock) {
+      onInsertBlock(timeBlock.hourIndex, timeBlock.minuteIndex);
+    }
+  };
+
   return (
     <div
       ref={drop}
-      className={`p-2 min-h-16 rounded ${
+      className={`p-2 min-h-16 rounded relative ${
         timeBlock.isCurrentTime
           ? "bg-current bg-opacity-10 border-l-4 border-current"
           : "bg-timeBlock"
       } ${isOver ? "bg-opacity-50" : ""}`}
       onClick={handleBlockClick}
+      onMouseEnter={() => setShowInsertButton(true)}
+      onMouseLeave={() => setShowInsertButton(false)}
     >
       <div className="text-xs font-medium mb-1">{timeBlock.time}</div>
       <div className="space-y-1">
@@ -102,6 +114,19 @@ const TimeBlockComponent: React.FC<TimeBlockProps> = ({
           />
         )}
       </div>
+      
+      {showInsertButton && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleInsert();
+          }}
+          className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 bg-green-500 hover:bg-green-600 rounded-full w-5 h-5 flex items-center justify-center z-10 shadow-md"
+          title="Add time block"
+        >
+          <Plus size={14} className="text-white" />
+        </button>
+      )}
     </div>
   );
 };

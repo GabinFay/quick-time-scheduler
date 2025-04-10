@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -180,6 +181,59 @@ const Scheduler: React.FC = () => {
       setUnscheduledTasks(unscheduledTasks.filter(t => t.id !== taskId));
     }
   };
+
+  const handleInsertBlock = (hourIndex: number, minuteIndex: number) => {
+    const now = new Date();
+
+    // Create a new time block to insert
+    const insertedBlockMinuteIndex = minuteIndex + 0.5;
+    const blockTime = new Date(now);
+    const baseHour = now.getHours();
+    blockTime.setMinutes(now.getMinutes() + (hourIndex * 60) + (insertedBlockMinuteIndex * 10));
+    
+    const hours = blockTime.getHours().toString().padStart(2, "0");
+    const mins = blockTime.getMinutes().toString().padStart(2, "0");
+    const timeString = `${hours}:${mins}`;
+    
+    const newBlock: TimeBlock = {
+      id: `${hours}-${mins}-inserted-${nanoid(4)}`,
+      time: timeString,
+      hourIndex: hourIndex,
+      minuteIndex: insertedBlockMinuteIndex,
+      isCurrentTime: false,
+    };
+
+    // Insert the new block and reindex to make room
+    const updatedBlocks = [...timeBlocks, newBlock].sort((a, b) => {
+      if (a.hourIndex !== b.hourIndex) {
+        return a.hourIndex - b.hourIndex;
+      }
+      return a.minuteIndex - b.minuteIndex;
+    });
+    
+    // Reindex the minute indices to be whole numbers again
+    const reindexedBlocks = updatedBlocks.reduce((acc: TimeBlock[], block, index, arr) => {
+      const prevBlock = index > 0 ? arr[index - 1] : null;
+      
+      if (prevBlock && prevBlock.hourIndex === block.hourIndex) {
+        const newMinuteIndex = prevBlock.minuteIndex + 1;
+        acc.push({
+          ...block,
+          minuteIndex: newMinuteIndex > 5 ? 5 : newMinuteIndex,
+        });
+      } else {
+        acc.push({
+          ...block,
+          minuteIndex: 0,
+        });
+      }
+      
+      return acc;
+    }, []);
+    
+    setTimeBlocks(reindexedBlocks);
+    toast("New time block added");
+  };
   
   return (
     <DndProvider backend={HTML5Backend}>
@@ -191,6 +245,7 @@ const Scheduler: React.FC = () => {
           tasks={scheduledTasks}
           onDropTask={handleDropTaskToTimeBlock}
           onTaskReorder={handleReorderTask}
+          onInsertBlock={handleInsertBlock}
         />
         
         <UnscheduledZone
