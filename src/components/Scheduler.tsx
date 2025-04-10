@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -13,6 +14,7 @@ const Scheduler: React.FC = () => {
   const [unscheduledTasks, setUnscheduledTasks] = useState<Task[]>([]);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
   
+  // Initialize time blocks once on component mount
   useEffect(() => {
     const initializeTimeBlocks = () => {
       const newBlocks = generateTimeBlocks(4); // Generate blocks for next 4 hours
@@ -21,47 +23,53 @@ const Scheduler: React.FC = () => {
     };
     
     initializeTimeBlocks();
-    
+  }, []); // Empty dependency array so this only runs once on mount
+  
+  // Set up the interval for updating time blocks
+  useEffect(() => {
     const intervalId = setInterval(() => {
-      if (shouldRemoveFirstHour(lastUpdateTime, timeBlocks)) {
-        const updatedBlocks = removeFirstHour(timeBlocks);
-        setTimeBlocks(updatedBlocks);
-        
-        const removedBlockIds = timeBlocks
-          .filter(block => block.hourIndex === 0)
-          .map(block => block.id);
-        
-        const tasksToUnschedule = scheduledTasks.filter(task => 
-          task.timeBlockId && removedBlockIds.includes(task.timeBlockId)
-        );
-        
-        if (tasksToUnschedule.length > 0) {
-          const updatedScheduledTasks = scheduledTasks.filter(
-            task => !removedBlockIds.includes(task.timeBlockId || '')
+      setTimeBlocks(prevTimeBlocks => {
+        if (shouldRemoveFirstHour(lastUpdateTime, prevTimeBlocks)) {
+          const updatedBlocks = removeFirstHour(prevTimeBlocks);
+          
+          // Handle tasks in the removed hour
+          const removedBlockIds = prevTimeBlocks
+            .filter(block => block.hourIndex === 0)
+            .map(block => block.id);
+          
+          const tasksToUnschedule = scheduledTasks.filter(task => 
+            task.timeBlockId && removedBlockIds.includes(task.timeBlockId)
           );
           
-          const expiredTasks = tasksToUnschedule.map(task => ({
-            ...task,
-            timeBlockId: undefined
-          }));
+          if (tasksToUnschedule.length > 0) {
+            const updatedScheduledTasks = scheduledTasks.filter(
+              task => !removedBlockIds.includes(task.timeBlockId || '')
+            );
+            
+            const expiredTasks = tasksToUnschedule.map(task => ({
+              ...task,
+              timeBlockId: undefined
+            }));
+            
+            setScheduledTasks(updatedScheduledTasks);
+            setUnscheduledTasks(prev => [...prev, ...expiredTasks]);
+            toast("Tasks from the past hour have been moved to unscheduled");
+          }
           
-          setScheduledTasks(updatedScheduledTasks);
-          setUnscheduledTasks([...unscheduledTasks, ...expiredTasks]);
-          toast("Tasks from the past hour have been moved to unscheduled");
+          setLastUpdateTime(new Date());
+          return updatedBlocks;
+        } else {
+          // Just update current time indicator without causing a loop
+          return prevTimeBlocks.map(block => ({
+            ...block,
+            isCurrentTime: checkIsCurrentTime(block)
+          }));
         }
-        
-        setLastUpdateTime(new Date());
-      } else {
-        const newBlocks = timeBlocks.map(block => ({
-          ...block,
-          isCurrentTime: checkIsCurrentTime(block)
-        }));
-        setTimeBlocks(newBlocks);
-      }
-    }, 60000);
+      });
+    }, 60000); // Check every minute
     
     return () => clearInterval(intervalId);
-  }, [timeBlocks, scheduledTasks, unscheduledTasks, lastUpdateTime]);
+  }, [scheduledTasks, unscheduledTasks, lastUpdateTime]); // Remove timeBlocks from dependencies
   
   const checkIsCurrentTime = (block: TimeBlock): boolean => {
     const now = new Date();
