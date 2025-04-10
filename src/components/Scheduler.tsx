@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -7,6 +6,7 @@ import TimeGrid from "./TimeGrid";
 import UnscheduledZone from "./UnscheduledZone";
 import { generateTimeBlocks, getTimeBlockIndex, shouldRemoveFirstHour, removeFirstHour } from "@/utils/timeUtils";
 import { toast } from "sonner";
+import { nanoid } from "nanoid";
 
 const Scheduler: React.FC = () => {
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
@@ -81,6 +81,20 @@ const Scheduler: React.FC = () => {
   };
   
   const handleDropTaskToTimeBlock = (taskId: string, timeBlockId: string) => {
+    // Check if this is a new task created directly in the time block
+    const existingTask = [...scheduledTasks, ...unscheduledTasks].find(task => task.id === taskId);
+    
+    if (!existingTask) {
+      // This is a new task being created directly in the schedule
+      const newTask: Task = {
+        id: taskId,
+        title: "New Task", // This will be replaced with the actual title from TimeBlock component
+        timeBlockId: timeBlockId,
+      };
+      setScheduledTasks(prev => [...prev, newTask]);
+      return;
+    }
+    
     const scheduledTask = scheduledTasks.find(task => task.id === taskId);
     const unscheduledTask = unscheduledTasks.find(task => task.id === taskId);
     
