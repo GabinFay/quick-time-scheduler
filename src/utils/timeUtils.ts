@@ -1,0 +1,77 @@
+
+import { TimeBlock } from "@/types";
+
+// Generate time blocks for the next n hours in 10 minute increments
+export function generateTimeBlocks(hours: number): TimeBlock[] {
+  const now = new Date();
+  const currentMinutes = now.getMinutes();
+  const roundedMinutes = Math.floor(currentMinutes / 10) * 10;
+  
+  // Set starting time to current rounded 10-minute block
+  now.setMinutes(roundedMinutes, 0, 0);
+  
+  const blocks: TimeBlock[] = [];
+  let hourIndex = 0;
+  
+  for (let h = 0; h < hours; h++) {
+    for (let m = 0; m < 60; m += 10) {
+      const blockTime = new Date(now);
+      blockTime.setMinutes(blockTime.getMinutes() + (h * 60) + m);
+      
+      const hours = blockTime.getHours().toString().padStart(2, "0");
+      const mins = blockTime.getMinutes().toString().padStart(2, "0");
+      const timeString = `${hours}:${mins}`;
+      
+      const minuteIndex = m / 10;
+      
+      // Check if this time block is the current time (within the current 10 minute window)
+      const isCurrentTime = h === 0 && m === 0;
+      
+      blocks.push({
+        id: `${hours}-${mins}`,
+        time: timeString,
+        hourIndex: h,
+        minuteIndex,
+        isCurrentTime,
+      });
+    }
+  }
+  
+  return blocks;
+}
+
+// Gets the index of a time block within the flattened array
+export function getTimeBlockIndex(blocks: TimeBlock[], timeBlockId: string): number {
+  return blocks.findIndex(block => block.id === timeBlockId);
+}
+
+// Check if an hour has passed and we need to shift columns
+export function shouldRemoveFirstHour(
+  lastUpdateTime: Date,
+  timeBlocks: TimeBlock[]
+): boolean {
+  if (!timeBlocks.length) return false;
+  
+  const now = new Date();
+  const timeDiffMinutes = (now.getTime() - lastUpdateTime.getTime()) / (1000 * 60);
+  
+  // If more than 60 minutes have passed since the last update
+  return timeDiffMinutes >= 60;
+}
+
+// Remove the first hour from the time blocks
+export function removeFirstHour(
+  timeBlocks: TimeBlock[]
+): TimeBlock[] {
+  // If there are no blocks or fewer than 6 blocks (less than an hour), return the current blocks
+  if (timeBlocks.length <= 6) return timeBlocks;
+  
+  // Filter out the blocks with hourIndex === 0
+  const updatedBlocks = timeBlocks.filter(block => block.hourIndex !== 0)
+    .map(block => ({
+      ...block,
+      hourIndex: block.hourIndex - 1
+    }));
+  
+  return updatedBlocks;
+}
