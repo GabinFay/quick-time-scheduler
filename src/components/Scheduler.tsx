@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -6,7 +5,7 @@ import { Task, TimeBlock } from "@/types";
 import TimeGrid from "./TimeGrid";
 import UnscheduledZone from "./UnscheduledZone";
 import { generateTimeBlocks, getTimeBlockIndex, shouldRemoveFirstHour, removeFirstHour } from "@/utils/timeUtils";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 const Scheduler: React.FC = () => {
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
@@ -14,7 +13,6 @@ const Scheduler: React.FC = () => {
   const [unscheduledTasks, setUnscheduledTasks] = useState<Task[]>([]);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
   
-  // Initialize time blocks
   useEffect(() => {
     const initializeTimeBlocks = () => {
       const newBlocks = generateTimeBlocks(4); // Generate blocks for next 4 hours
@@ -24,14 +22,11 @@ const Scheduler: React.FC = () => {
     
     initializeTimeBlocks();
     
-    // Update every minute to check for hour shifts and current time block
     const intervalId = setInterval(() => {
       if (shouldRemoveFirstHour(lastUpdateTime, timeBlocks)) {
-        // Remove first hour column and update tasks
         const updatedBlocks = removeFirstHour(timeBlocks);
         setTimeBlocks(updatedBlocks);
         
-        // Update tasks with new block references or move to unscheduled
         const removedBlockIds = timeBlocks
           .filter(block => block.hourIndex === 0)
           .map(block => block.id);
@@ -40,7 +35,6 @@ const Scheduler: React.FC = () => {
           task.timeBlockId && removedBlockIds.includes(task.timeBlockId)
         );
         
-        // Move expired tasks to unscheduled
         if (tasksToUnschedule.length > 0) {
           const updatedScheduledTasks = scheduledTasks.filter(
             task => !removedBlockIds.includes(task.timeBlockId || '')
@@ -58,19 +52,17 @@ const Scheduler: React.FC = () => {
         
         setLastUpdateTime(new Date());
       } else {
-        // Just update the current time indicator
         const newBlocks = timeBlocks.map(block => ({
           ...block,
           isCurrentTime: checkIsCurrentTime(block)
         }));
         setTimeBlocks(newBlocks);
       }
-    }, 60000); // Check every minute
+    }, 60000);
     
     return () => clearInterval(intervalId);
   }, [timeBlocks, scheduledTasks, unscheduledTasks, lastUpdateTime]);
   
-  // Check if a time block represents the current time
   const checkIsCurrentTime = (block: TimeBlock): boolean => {
     const now = new Date();
     const currentHour = now.getHours().toString().padStart(2, "0");
@@ -80,9 +72,7 @@ const Scheduler: React.FC = () => {
     return block.time === `${currentHour}:${currentMinuteStr}`;
   };
   
-  // Handle dropping a task into a time block
   const handleDropTaskToTimeBlock = (taskId: string, timeBlockId: string) => {
-    // Find the task in either scheduled or unscheduled tasks
     const scheduledTask = scheduledTasks.find(task => task.id === taskId);
     const unscheduledTask = unscheduledTasks.find(task => task.id === taskId);
     
@@ -95,18 +85,14 @@ const Scheduler: React.FC = () => {
     
     if (targetBlockIndex === -1) return;
     
-    // If the task is from unscheduled tasks, remove it
     if (unscheduledTask) {
       setUnscheduledTasks(unscheduledTasks.filter(t => t.id !== taskId));
     } else if (scheduledTask && scheduledTask.timeBlockId === timeBlockId) {
-      // If dropping to the same block, do nothing
       return;
     } else if (scheduledTask) {
-      // If it's already scheduled, remove from current location
       setScheduledTasks(scheduledTasks.filter(t => t.id !== taskId));
     }
     
-    // Shift tasks in the same column forward
     const tasksInSameHourColumn = scheduledTasks.filter(t => {
       if (!t.timeBlockId) return false;
       const blockIndex = getTimeBlockIndex(timeBlocks, t.timeBlockId);
@@ -122,7 +108,6 @@ const Scheduler: React.FC = () => {
       );
     });
     
-    // Update all affected tasks by shifting them down
     const updatedTasks = scheduledTasks
       .filter(t => !tasksInSameHourColumn.some(st => st.id === t.id) && t.id !== taskId)
       .concat(
@@ -131,10 +116,8 @@ const Scheduler: React.FC = () => {
           const blockIndex = getTimeBlockIndex(timeBlocks, t.timeBlockId);
           const block = timeBlocks[blockIndex];
           
-          // Find the next block in the same column
           const nextMinuteIndex = block.minuteIndex + 1;
           if (nextMinuteIndex > 5) {
-            // If this would push beyond this hour, move to unscheduled
             setUnscheduledTasks([...unscheduledTasks, { ...t, timeBlockId: undefined }]);
             return null;
           }
@@ -150,12 +133,10 @@ const Scheduler: React.FC = () => {
         .filter(Boolean) as Task[]
       );
     
-    // Add the dragged task to its new position
     const newScheduledTask = { ...task, timeBlockId };
     setScheduledTasks([...updatedTasks, newScheduledTask]);
   };
   
-  // Handle reordering tasks
   const handleReorderTask = (taskId: string, timeBlockId: string) => {
     const task = scheduledTasks.find(t => t.id === taskId);
     if (!task || task.timeBlockId === timeBlockId) return;
@@ -167,12 +148,10 @@ const Scheduler: React.FC = () => {
     setScheduledTasks(updatedTasks);
   };
   
-  // Handle adding a new unscheduled task
   const handleAddUnscheduledTask = (task: Task) => {
     setUnscheduledTasks([...unscheduledTasks, task]);
   };
   
-  // Handle removing a task
   const handleRemoveTask = (taskId: string) => {
     const fromScheduled = scheduledTasks.find(t => t.id === taskId);
     const fromUnscheduled = unscheduledTasks.find(t => t.id === taskId);
