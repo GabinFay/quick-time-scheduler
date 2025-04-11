@@ -208,10 +208,6 @@ const Scheduler: React.FC = () => {
              (block.hourIndex > hourIndex);
     });
     
-    const lastBlockInHour = timeBlocks.find(
-      block => block.hourIndex === hourIndex && block.minuteIndex === 5
-    );
-    
     const newBlock: TimeBlock = {
       id: newBlockId,
       time: formatTime(blockTime),
@@ -238,18 +234,10 @@ const Scheduler: React.FC = () => {
           newMinuteIndex = 0;
         }
       } else {
-        if (lastBlockInHour) {
-          if (block.minuteIndex === 0) {
-            newMinuteIndex = 1;
-          } else {
-            newMinuteIndex = block.minuteIndex + 1;
-            
-            if (newMinuteIndex > 5) {
-              newHourIndex = block.hourIndex + 1;
-              newMinuteIndex = 0;
-            }
-          }
-        }
+        const originalTotalMinutes = block.hourIndex * 60 + block.minuteIndex * 10;
+        const shiftedTotalMinutes = originalTotalMinutes + 10;
+        newHourIndex = Math.floor(shiftedTotalMinutes / 60);
+        newMinuteIndex = Math.floor((shiftedTotalMinutes % 60) / 10);
       }
       
       const updatedBlock = {
