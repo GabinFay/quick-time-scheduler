@@ -118,7 +118,7 @@ const TimeBlockComponent: React.FC<TimeBlockProps> = ({
             handleInsert();
           }}
           className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 bg-green-500 hover:bg-green-600 rounded-full w-5 h-5 flex items-center justify-center z-10 shadow-md"
-          title="Add time block"
+          title="Add 10-minute block"
         >
           <Plus size={14} className="text-white" />
         </button>

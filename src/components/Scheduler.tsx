@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -183,66 +182,55 @@ const Scheduler: React.FC = () => {
   };
 
   const handleInsertBlock = (hourIndex: number, minuteIndex: number) => {
-    const now = new Date();
-    
-    // Get the current block time as a reference
     const currentBlock = timeBlocks.find(
       block => block.hourIndex === hourIndex && block.minuteIndex === minuteIndex
     );
     
     if (!currentBlock) return;
     
-    // Parse the current block time
-    const [currentHours, currentMinutes] = currentBlock.time.split(":").map(Number);
+    const [hours, minutes] = currentBlock.time.split(":").map(Number);
     
-    // Create a new time that's 5 minutes after the current block
-    const newTime = new Date();
-    newTime.setHours(currentHours);
-    newTime.setMinutes(currentMinutes + 5);
+    const blockTime = new Date();
+    blockTime.setHours(hours);
+    blockTime.setMinutes(minutes + 10);
     
-    const hours = newTime.getHours().toString().padStart(2, "0");
-    const mins = newTime.getMinutes().toString().padStart(2, "0");
-    const timeString = `${hours}:${mins}`;
+    const newHours = blockTime.getHours().toString().padStart(2, "0");
+    const newMinutes = blockTime.getMinutes().toString().padStart(2, "0");
+    const timeString = `${newHours}:${newMinutes}`;
     
-    // Create the new block with a proper time label
+    const newBlockId = `block-${nanoid(6)}`;
+    
     const newBlock: TimeBlock = {
-      id: `block-${nanoid(6)}`,
+      id: newBlockId,
       time: timeString,
       hourIndex: hourIndex,
-      minuteIndex: minuteIndex + 0.5, // Insert between blocks
+      minuteIndex: minuteIndex + 1,
       isCurrentTime: false,
     };
-
-    // Insert the new block and sort by time
-    const updatedBlocks = [...timeBlocks, newBlock].sort((a, b) => {
+    
+    const blocksToShift = timeBlocks.filter(
+      block => block.hourIndex === hourIndex && block.minuteIndex > minuteIndex
+    );
+    
+    const updatedBlocks = timeBlocks.map(block => {
+      if (blocksToShift.some(b => b.id === block.id)) {
+        return {
+          ...block,
+          minuteIndex: block.minuteIndex + 1,
+        };
+      }
+      return block;
+    });
+    
+    const finalBlocks = [...updatedBlocks, newBlock].sort((a, b) => {
       if (a.hourIndex !== b.hourIndex) {
         return a.hourIndex - b.hourIndex;
       }
       return a.minuteIndex - b.minuteIndex;
     });
     
-    // Properly reindex all blocks to ensure they maintain correct order
-    const reindexedBlocks: TimeBlock[] = [];
-    let lastHourIndex = -1;
-    let minuteCounter = 0;
-    
-    updatedBlocks.forEach(block => {
-      if (block.hourIndex !== lastHourIndex) {
-        // Reset minute counter for a new hour
-        lastHourIndex = block.hourIndex;
-        minuteCounter = 0;
-      }
-      
-      reindexedBlocks.push({
-        ...block,
-        minuteIndex: minuteCounter
-      });
-      
-      minuteCounter++;
-    });
-    
-    setTimeBlocks(reindexedBlocks);
-    toast("New time block added");
+    setTimeBlocks(finalBlocks);
+    toast("New 10-minute block added");
   };
   
   return (
