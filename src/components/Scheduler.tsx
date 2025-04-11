@@ -184,26 +184,36 @@ const Scheduler: React.FC = () => {
 
   const handleInsertBlock = (hourIndex: number, minuteIndex: number) => {
     const now = new Date();
-
-    // Create a new time block to insert
-    const insertedBlockMinuteIndex = minuteIndex + 0.5;
-    const blockTime = new Date(now);
-    const baseHour = now.getHours();
-    blockTime.setMinutes(now.getMinutes() + (hourIndex * 60) + (insertedBlockMinuteIndex * 10));
     
-    const hours = blockTime.getHours().toString().padStart(2, "0");
-    const mins = blockTime.getMinutes().toString().padStart(2, "0");
+    // Get the current block time as a reference
+    const currentBlock = timeBlocks.find(
+      block => block.hourIndex === hourIndex && block.minuteIndex === minuteIndex
+    );
+    
+    if (!currentBlock) return;
+    
+    // Parse the current block time
+    const [currentHours, currentMinutes] = currentBlock.time.split(":").map(Number);
+    
+    // Create a new time that's 5 minutes after the current block
+    const newTime = new Date();
+    newTime.setHours(currentHours);
+    newTime.setMinutes(currentMinutes + 5);
+    
+    const hours = newTime.getHours().toString().padStart(2, "0");
+    const mins = newTime.getMinutes().toString().padStart(2, "0");
     const timeString = `${hours}:${mins}`;
     
+    // Create the new block with a proper time label
     const newBlock: TimeBlock = {
-      id: `${hours}-${mins}-inserted-${nanoid(4)}`,
+      id: `block-${nanoid(6)}`,
       time: timeString,
       hourIndex: hourIndex,
-      minuteIndex: insertedBlockMinuteIndex,
+      minuteIndex: minuteIndex + 0.5, // Insert between blocks
       isCurrentTime: false,
     };
 
-    // Insert the new block and reindex to make room
+    // Insert the new block and sort by time
     const updatedBlocks = [...timeBlocks, newBlock].sort((a, b) => {
       if (a.hourIndex !== b.hourIndex) {
         return a.hourIndex - b.hourIndex;
@@ -211,25 +221,25 @@ const Scheduler: React.FC = () => {
       return a.minuteIndex - b.minuteIndex;
     });
     
-    // Reindex the minute indices to be whole numbers again
-    const reindexedBlocks = updatedBlocks.reduce((acc: TimeBlock[], block, index, arr) => {
-      const prevBlock = index > 0 ? arr[index - 1] : null;
-      
-      if (prevBlock && prevBlock.hourIndex === block.hourIndex) {
-        const newMinuteIndex = prevBlock.minuteIndex + 1;
-        acc.push({
-          ...block,
-          minuteIndex: newMinuteIndex > 5 ? 5 : newMinuteIndex,
-        });
-      } else {
-        acc.push({
-          ...block,
-          minuteIndex: 0,
-        });
+    // Properly reindex all blocks to ensure they maintain correct order
+    const reindexedBlocks: TimeBlock[] = [];
+    let lastHourIndex = -1;
+    let minuteCounter = 0;
+    
+    updatedBlocks.forEach(block => {
+      if (block.hourIndex !== lastHourIndex) {
+        // Reset minute counter for a new hour
+        lastHourIndex = block.hourIndex;
+        minuteCounter = 0;
       }
       
-      return acc;
-    }, []);
+      reindexedBlocks.push({
+        ...block,
+        minuteIndex: minuteCounter
+      });
+      
+      minuteCounter++;
+    });
     
     setTimeBlocks(reindexedBlocks);
     toast("New time block added");

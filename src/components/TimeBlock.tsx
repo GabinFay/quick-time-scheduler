@@ -52,12 +52,8 @@ const TimeBlockComponent: React.FC<TimeBlockProps> = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && newTaskTitle.trim()) {
       // Create a new task directly in this time block
-      const newTask: Task = {
-        id: nanoid(),
-        title: newTaskTitle.trim(),
-        timeBlockId: timeBlock.id,
-      };
-      onDropTask(newTask.id, timeBlock.id, newTaskTitle.trim());
+      const newTaskId = nanoid();
+      onDropTask(newTaskId, timeBlock.id, newTaskTitle.trim());
       setNewTaskTitle("");
       setIsEditing(false);
     } else if (e.key === 'Escape') {
