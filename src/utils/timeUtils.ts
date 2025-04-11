@@ -4,18 +4,19 @@ import { TimeBlock } from "@/types";
 // Generate time blocks for the next n hours in 10 minute increments
 export function generateTimeBlocks(hours: number): TimeBlock[] {
   const now = new Date();
+  const currentHour = now.getHours();
   const currentMinutes = now.getMinutes();
   const roundedMinutes = Math.floor(currentMinutes / 10) * 10;
   
-  // Set starting time to current rounded 10-minute block
-  now.setMinutes(roundedMinutes, 0, 0);
+  // Start at the beginning of the current hour, not just the current time
+  const startTime = new Date(now);
+  startTime.setMinutes(0, 0, 0); // Set to the beginning of the current hour
   
   const blocks: TimeBlock[] = [];
-  let hourIndex = 0;
   
   for (let h = 0; h < hours; h++) {
     for (let m = 0; m < 60; m += 10) {
-      const blockTime = new Date(now);
+      const blockTime = new Date(startTime);
       blockTime.setMinutes(blockTime.getMinutes() + (h * 60) + m);
       
       const hours = blockTime.getHours().toString().padStart(2, "0");
@@ -25,7 +26,7 @@ export function generateTimeBlocks(hours: number): TimeBlock[] {
       const minuteIndex = m / 10;
       
       // Check if this time block is the current time (within the current 10 minute window)
-      const isCurrentTime = h === 0 && m === 0;
+      const isCurrentTime = h === 0 && m === roundedMinutes;
       
       blocks.push({
         id: `${hours}-${mins}`,
