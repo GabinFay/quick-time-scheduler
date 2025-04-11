@@ -10,7 +10,9 @@ import {
   shouldRemoveFirstHour, 
   removeFirstHour,
   getCurrentTimeInfo,
-  updateCurrentTimeBlock
+  updateCurrentTimeBlock,
+  updateCurrentTimeBlocks,
+  isCurrentTimeBlock
 } from "@/utils/timeUtils";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
@@ -61,9 +63,9 @@ const Scheduler: React.FC = () => {
           }
           
           setLastUpdateTime(new Date());
-          return updatedBlocks;
+          return updateCurrentTimeBlocks(updatedBlocks);
         } else {
-          return prevTimeBlocks.map(block => updateCurrentTimeBlock(block));
+          return updateCurrentTimeBlocks(prevTimeBlocks);
         }
       });
     }, 60000); // Check every minute
@@ -214,7 +216,7 @@ const Scheduler: React.FC = () => {
       time: formatTime(blockTime),
       hourIndex: hourIndex,
       minuteIndex: minuteIndex + 1,
-      isCurrentTime: false,
+      isCurrentTime: isCurrentTimeBlock(formatTime(blockTime)),
     };
     
     const blockMoveMap = new Map<string, string>();
@@ -299,8 +301,6 @@ const Scheduler: React.FC = () => {
   };
   
   const updateTimeLabels = (blocks: TimeBlock[]): TimeBlock[] => {
-    const { hour: currentHour, minute: currentMinute } = getCurrentTimeInfo();
-    
     const blocksByHour: { [key: number]: TimeBlock[] } = {};
     
     blocks.forEach(block => {
@@ -335,14 +335,12 @@ const Scheduler: React.FC = () => {
           currentTime.setMinutes(currentTime.getMinutes() + 10);
         }
         
-        const blockHour = currentTime.getHours();
-        const blockMinute = currentTime.getMinutes();
-        const isCurrentTimeBlock = blockHour === currentHour && blockMinute === currentMinute;
+        const timeString = formatTime(currentTime);
         
         result.push({
           ...block,
-          time: formatTime(currentTime),
-          isCurrentTime: isCurrentTimeBlock
+          time: timeString,
+          isCurrentTime: isCurrentTimeBlock(timeString)
         });
       });
     });

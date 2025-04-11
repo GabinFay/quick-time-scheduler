@@ -26,7 +26,8 @@ export function generateTimeBlocks(hours: number): TimeBlock[] {
       const minuteIndex = m / 10;
       
       // Check if this time block is the current time (within the current 10 minute window)
-      const isCurrentTime = h === 0 && m === roundedMinutes;
+      const isCurrentTime = (h === 0 && m === roundedMinutes) || 
+        isCurrentTimeBlock(timeString);
       
       blocks.push({
         id: `${hours}-${mins}`,
@@ -85,17 +86,26 @@ export function getCurrentTimeInfo(): { hour: number, minute: number } {
   return { hour, minute };
 }
 
+// Check if a time string represents the current time block
+export function isCurrentTimeBlock(timeString: string): boolean {
+  const { hour, minute } = getCurrentTimeInfo();
+  
+  const [blockHourStr, blockMinuteStr] = timeString.split(':');
+  const blockHour = parseInt(blockHourStr);
+  const blockMinute = parseInt(blockMinuteStr);
+  
+  return blockHour === hour && blockMinute === minute;
+}
+
 // Update a block to mark it as current time if it matches the current time
 export function updateCurrentTimeBlock(block: TimeBlock): TimeBlock {
-  const { hour, minute } = getCurrentTimeInfo();
-  const blockHour = parseInt(block.time.split(':')[0]);
-  const blockMinute = parseInt(block.time.split(':')[1]);
-  
-  const isCurrentTime = blockHour === hour && blockMinute === minute;
-  
   return {
     ...block,
-    isCurrentTime
+    isCurrentTime: isCurrentTimeBlock(block.time)
   };
 }
 
+// Update all time blocks to correctly mark the current time block
+export function updateCurrentTimeBlocks(blocks: TimeBlock[]): TimeBlock[] {
+  return blocks.map(block => updateCurrentTimeBlock(block));
+}
