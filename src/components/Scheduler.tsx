@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -337,19 +338,24 @@ const Scheduler: React.FC = () => {
     
     const result: TimeBlock[] = [];
     
-    sortedHours.forEach(hour => {
-      const blocksInHour = blocksByHour[hour];
+    // Get the current time for reference
+    const now = new Date();
+    const currentHour = now.getHours();
+    
+    sortedHours.forEach(hourIndex => {
+      const blocksInHour = blocksByHour[hourIndex];
       
-      const firstBlock = blocksInHour[0];
-      const [firstHours, firstMinutes] = firstBlock.time.split(":").map(Number);
+      // Calculate real hour based on current time and hourIndex
+      const realHour = currentHour + hourIndex;
       
+      // Create a base time for this hour, always starting at XX:00
       const currentTime = new Date();
-      currentTime.setHours(firstHours, firstMinutes, 0, 0);
+      currentTime.setHours(realHour, 0, 0, 0);
       
       blocksInHour.forEach((block, index) => {
-        if (index > 0) {
-          currentTime.setMinutes(currentTime.getMinutes() + 10);
-        }
+        // Calculate minutes based on minuteIndex (each is 10 minutes apart)
+        const minutes = block.minuteIndex * 10;
+        currentTime.setMinutes(minutes);
         
         const timeString = formatTime(currentTime);
         
