@@ -12,7 +12,8 @@ import {
   getCurrentTimeInfo,
   updateCurrentTimeBlock,
   updateCurrentTimeBlocks,
-  isCurrentTimeBlock
+  isCurrentTimeBlock,
+  getTimeBlockIdsFromHour
 } from "@/utils/timeUtils";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
@@ -294,6 +295,33 @@ const Scheduler: React.FC = () => {
     toast("New 10-minute block added");
   };
   
+  const handleDeleteFirstColumn = () => {
+    const firstColumnHourIndex = Math.min(...timeBlocks.map(block => block.hourIndex));
+    
+    const blocksToRemoveIds = getTimeBlockIdsFromHour(timeBlocks, firstColumnHourIndex);
+    
+    const tasksToUnschedule = scheduledTasks.filter(
+      task => task.timeBlockId && blocksToRemoveIds.includes(task.timeBlockId)
+    );
+    
+    const updatedScheduledTasks = scheduledTasks.filter(
+      task => !blocksToRemoveIds.includes(task.timeBlockId || '')
+    );
+    
+    const unscheduledTasksToAdd = tasksToUnschedule.map(task => ({
+      ...task,
+      timeBlockId: undefined
+    }));
+    
+    const updatedBlocks = removeFirstHour(timeBlocks);
+    
+    setTimeBlocks(updateCurrentTimeBlocks(updatedBlocks));
+    setScheduledTasks(updatedScheduledTasks);
+    setUnscheduledTasks(prev => [...prev, ...unscheduledTasksToAdd]);
+    
+    toast("First column deleted and tasks moved to unscheduled");
+  };
+  
   const formatTime = (date: Date): string => {
     const hours = date.getHours().toString().padStart(2, "0");
     const minutes = date.getMinutes().toString().padStart(2, "0");
@@ -359,6 +387,7 @@ const Scheduler: React.FC = () => {
           onDropTask={handleDropTaskToTimeBlock}
           onTaskReorder={handleReorderTask}
           onInsertBlock={handleInsertBlock}
+          onDeleteFirstColumn={handleDeleteFirstColumn}
         />
         
         <UnscheduledZone

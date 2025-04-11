@@ -1,4 +1,3 @@
-
 import { TimeBlock } from "@/types";
 
 // Generate time blocks for the next n hours in 10 minute increments
@@ -108,4 +107,14 @@ export function updateCurrentTimeBlock(block: TimeBlock): TimeBlock {
 // Update all time blocks to correctly mark the current time block
 export function updateCurrentTimeBlocks(blocks: TimeBlock[]): TimeBlock[] {
   return blocks.map(block => updateCurrentTimeBlock(block));
+}
+
+// Helper function to safely get timeBlockIds from an hour
+export function getTimeBlockIdsFromHour(
+  blocks: TimeBlock[], 
+  hourIndex: number
+): string[] {
+  return blocks
+    .filter(block => block.hourIndex === hourIndex)
+    .map(block => block.id);
 }
