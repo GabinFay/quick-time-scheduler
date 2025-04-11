@@ -189,55 +189,95 @@ const Scheduler: React.FC = () => {
     
     if (!currentBlock) return;
     
-    const [hours, minutes] = currentBlock.time.split(":").map(Number);
-    
-    // Create a new date object for the inserted block (10 minutes after current block)
-    const blockTime = new Date();
-    blockTime.setHours(hours);
-    blockTime.setMinutes(minutes + 10);
-    
     const newBlockId = `block-${nanoid(6)}`;
     
-    // Find blocks that need to be shifted (those in the same hour with higher minuteIndex)
-    const blocksToShift = timeBlocks.filter(
-      block => block.hourIndex === hourIndex && block.minuteIndex > minuteIndex
-    );
+    // Create a new set of time blocks with proper time calculations
+    let updatedBlocks = [...timeBlocks];
     
-    // Update minuteIndex for blocks that need to be shifted
-    const updatedBlocks = timeBlocks.map(block => {
-      if (blocksToShift.some(b => b.id === block.id)) {
+    // First, increment the minuteIndex for all blocks in the same hour that come after the insertion point
+    updatedBlocks = updatedBlocks.map(block => {
+      if (block.hourIndex === hourIndex && block.minuteIndex > minuteIndex) {
         return {
           ...block,
-          minuteIndex: block.minuteIndex + 1,
+          minuteIndex: block.minuteIndex + 1
         };
       }
       return block;
     });
     
     // Create the new block to insert
+    const newTime = new Date();
+    const [hours, minutes] = currentBlock.time.split(":").map(Number);
+    newTime.setHours(hours);
+    newTime.setMinutes(minutes + 10);
+    
     const newBlock: TimeBlock = {
       id: newBlockId,
-      time: formatTime(blockTime),
+      time: formatTime(newTime), // This will be updated later anyway
       hourIndex: hourIndex,
       minuteIndex: minuteIndex + 1,
       isCurrentTime: false,
     };
-
-    // Combine updated blocks with the new block
-    let finalBlocks = [...updatedBlocks, newBlock];
     
-    // Sort the blocks by hour and minute
-    finalBlocks.sort((a, b) => {
+    // Add the new block to our collection
+    updatedBlocks.push(newBlock);
+    
+    // Now shift tasks to their new time blocks
+    const tasksToShift = scheduledTasks.filter(task => {
+      if (!task.timeBlockId) return false;
+      
+      const blockIndex = getTimeBlockIndex(timeBlocks, task.timeBlockId);
+      if (blockIndex === -1) return false;
+      
+      const block = timeBlocks[blockIndex];
+      return (
+        block.hourIndex === hourIndex && 
+        block.minuteIndex > minuteIndex
+      );
+    });
+    
+    const updatedTasks = [...scheduledTasks];
+    
+    tasksToShift.forEach(task => {
+      if (!task.timeBlockId) return;
+      
+      const oldBlockIndex = getTimeBlockIndex(timeBlocks, task.timeBlockId);
+      if (oldBlockIndex === -1) return;
+      
+      const oldBlock = timeBlocks[oldBlockIndex];
+      
+      // Find the new block with the same hourIndex but minuteIndex + 1
+      const newTimeBlock = updatedBlocks.find(
+        block => 
+          block.hourIndex === oldBlock.hourIndex && 
+          block.minuteIndex === oldBlock.minuteIndex + 1
+      );
+      
+      if (newTimeBlock) {
+        // Update the task's timeBlockId to the new block
+        const taskIndex = updatedTasks.findIndex(t => t.id === task.id);
+        if (taskIndex !== -1) {
+          updatedTasks[taskIndex] = {
+            ...updatedTasks[taskIndex],
+            timeBlockId: newTimeBlock.id
+          };
+        }
+      }
+    });
+    
+    // Sort blocks by hour and minute for consistent rendering
+    updatedBlocks.sort((a, b) => {
       if (a.hourIndex !== b.hourIndex) {
         return a.hourIndex - b.hourIndex;
       }
       return a.minuteIndex - b.minuteIndex;
     });
     
-    // Now update all time labels to maintain proper sequence
-    finalBlocks = updateTimeLabels(finalBlocks);
+    // Update time labels across all blocks for consistency
+    updatedBlocks = updateTimeLabels(updatedBlocks);
     
-    setTimeBlocks(finalBlocks);
+    setTimeBlocks(updatedBlocks);
+    setScheduledTasks(updatedTasks);
     toast("New 10-minute block added");
   };
   
