@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -289,26 +288,16 @@ const Scheduler: React.FC = () => {
     
     const blocksToRemoveIds = getTimeBlockIdsFromHour(timeBlocks, firstColumnHourIndex);
     
-    const tasksToUnschedule = scheduledTasks.filter(
-      task => task.timeBlockId && blocksToRemoveIds.includes(task.timeBlockId)
-    );
-    
     const updatedScheduledTasks = scheduledTasks.filter(
       task => !blocksToRemoveIds.includes(task.timeBlockId || '')
     );
-    
-    const unscheduledTasksToAdd = tasksToUnschedule.map(task => ({
-      ...task,
-      timeBlockId: undefined
-    }));
     
     const updatedBlocks = removeFirstHour(timeBlocks);
     
     setTimeBlocks(updateCurrentTimeBlocks(updatedBlocks));
     setScheduledTasks(updatedScheduledTasks);
-    setUnscheduledTasks(prev => [...prev, ...unscheduledTasksToAdd]);
     
-    toast("First column deleted and tasks moved to unscheduled");
+    toast("First column deleted and its tasks were removed");
   };
   
   const formatTime = (date: Date): string => {
@@ -338,22 +327,18 @@ const Scheduler: React.FC = () => {
     
     const result: TimeBlock[] = [];
     
-    // Get the current time for reference
     const now = new Date();
     const currentHour = now.getHours();
     
     sortedHours.forEach(hourIndex => {
       const blocksInHour = blocksByHour[hourIndex];
       
-      // Calculate real hour based on current time and hourIndex
       const realHour = currentHour + hourIndex;
       
-      // Create a base time for this hour, always starting at XX:00
       const currentTime = new Date();
       currentTime.setHours(realHour, 0, 0, 0);
       
       blocksInHour.forEach((block, index) => {
-        // Calculate minutes based on minuteIndex (each is 10 minutes apart)
         const minutes = block.minuteIndex * 10;
         currentTime.setMinutes(minutes);
         
