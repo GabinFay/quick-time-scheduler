@@ -4,7 +4,14 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { Task, TimeBlock } from "@/types";
 import TimeGrid from "./TimeGrid";
 import UnscheduledZone from "./UnscheduledZone";
-import { generateTimeBlocks, getTimeBlockIndex, shouldRemoveFirstHour, removeFirstHour } from "@/utils/timeUtils";
+import { 
+  generateTimeBlocks, 
+  getTimeBlockIndex, 
+  shouldRemoveFirstHour, 
+  removeFirstHour,
+  getCurrentTimeInfo,
+  updateCurrentTimeBlock
+} from "@/utils/timeUtils";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
 
@@ -56,10 +63,7 @@ const Scheduler: React.FC = () => {
           setLastUpdateTime(new Date());
           return updatedBlocks;
         } else {
-          return prevTimeBlocks.map(block => ({
-            ...block,
-            isCurrentTime: checkIsCurrentTime(block)
-          }));
+          return prevTimeBlocks.map(block => updateCurrentTimeBlock(block));
         }
       });
     }, 60000); // Check every minute
@@ -295,6 +299,8 @@ const Scheduler: React.FC = () => {
   };
   
   const updateTimeLabels = (blocks: TimeBlock[]): TimeBlock[] => {
+    const { hour: currentHour, minute: currentMinute } = getCurrentTimeInfo();
+    
     const blocksByHour: { [key: number]: TimeBlock[] } = {};
     
     blocks.forEach(block => {
@@ -329,9 +335,14 @@ const Scheduler: React.FC = () => {
           currentTime.setMinutes(currentTime.getMinutes() + 10);
         }
         
+        const blockHour = currentTime.getHours();
+        const blockMinute = currentTime.getMinutes();
+        const isCurrentTimeBlock = blockHour === currentHour && blockMinute === currentMinute;
+        
         result.push({
           ...block,
-          time: formatTime(currentTime)
+          time: formatTime(currentTime),
+          isCurrentTime: isCurrentTimeBlock
         });
       });
     });

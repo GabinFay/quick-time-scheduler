@@ -76,3 +76,26 @@ export function removeFirstHour(
   
   return updatedBlocks;
 }
+
+// Get the current time block info (for tracking current time)
+export function getCurrentTimeInfo(): { hour: number, minute: number } {
+  const now = new Date();
+  const hour = now.getHours();
+  const minute = Math.floor(now.getMinutes() / 10) * 10;
+  return { hour, minute };
+}
+
+// Update a block to mark it as current time if it matches the current time
+export function updateCurrentTimeBlock(block: TimeBlock): TimeBlock {
+  const { hour, minute } = getCurrentTimeInfo();
+  const blockHour = parseInt(block.time.split(':')[0]);
+  const blockMinute = parseInt(block.time.split(':')[1]);
+  
+  const isCurrentTime = blockHour === hour && blockMinute === minute;
+  
+  return {
+    ...block,
+    isCurrentTime
+  };
+}
+
